@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Menu, X, LogOut, Users } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
 
 export function Navbar() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -35,12 +37,14 @@ export function Navbar() {
             >
               Dashboard
             </Link>
-            <Link
-              href="/visitors/new"
-              className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Add Visitor
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/visitors/new"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Add Visitor
+              </Link>
+            )}
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -70,13 +74,15 @@ export function Navbar() {
             >
               Dashboard
             </Link>
-            <Link
-              href="/visitors/new"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Add Visitor
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/visitors/new"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Add Visitor
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"

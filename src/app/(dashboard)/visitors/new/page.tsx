@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -8,11 +8,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { VisitorFormData, VisitorPhoto } from '@/types';
 import { ArrowLeft, Users, X, Loader2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { PhotoUpload } from '@/components/visitors/photo-upload';
 import { CompanionForm, CompanionData } from '@/components/visitors/companion-form';
+import { useAuth } from '@/context/auth-context';
+
+interface Driver {
+  id: string;
+  name: string;
+  email: string;
+}
 
 function generateGroupId(): string {
   return `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -43,10 +51,38 @@ interface Companion {
 
 export default function NewVisitorPage() {
   const router = useRouter();
+  const { isAdmin, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [companions, setCompanions] = useState<Companion[]>([]);
   const [photos, setPhotos] = useState<VisitorPhoto[]>([]);
   const groupIdRef = useRef<string>(generateGroupId());
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(true);
+
+  // Redirect non-admins
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      toast.error('Only admins can add visitors');
+      router.push('/dashboard');
+    }
+  }, [authLoading, isAdmin, router]);
+
+  useEffect(() => {
+    async function fetchDrivers() {
+      try {
+        const response = await fetch('/api/drivers');
+        const data = await response.json();
+        if (data.status === 'success') {
+          setDrivers(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch drivers:', error);
+      } finally {
+        setLoadingDrivers(false);
+      }
+    }
+    fetchDrivers();
+  }, []);
 
   const {
     register,
@@ -186,6 +222,20 @@ export default function NewVisitorPage() {
 
   const isGroup = companions.length > 0;
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // Don't render if not admin (redirect will happen)
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <div className="mb-6">
@@ -245,7 +295,15 @@ export default function NewVisitorPage() {
               <Input label="Arrival Time *" type="time" error={errors.arrivalTime?.message} {...register('arrivalTime')} />
               <Input label="Airline *" placeholder="e.g., Delta, United" error={errors.airline?.message} {...register('airline')} />
               <Input label="Flight Number *" placeholder="e.g., DL123" error={errors.flightNumber?.message} {...register('flightNumber')} />
-              <Input label="Driver *" placeholder="Driver name" error={errors.driver?.message} {...register('driver')} className="sm:col-span-2" />
+              <Select
+                label="Driver *"
+                placeholder={loadingDrivers ? "Loading drivers..." : "Select a driver"}
+                options={drivers.map(d => ({ value: d.name, label: d.name }))}
+                error={errors.driver?.message}
+                disabled={loadingDrivers}
+                {...register('driver')}
+                className="sm:col-span-2"
+              />
             </div>
           </div>
 

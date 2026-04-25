@@ -1,15 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Visitor, VisitorFormData, VisitorPhoto } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { PhotoUpload } from './photo-upload';
+
+interface Driver {
+  id: string;
+  name: string;
+  email: string;
+}
 
 const visitorSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -46,6 +53,25 @@ function formatDateForInput(date: Date | string | undefined): string {
 
 export function VisitorForm({ visitor, onSubmit, isLoading }: VisitorFormProps) {
   const [photos, setPhotos] = useState<VisitorPhoto[]>(visitor?.photos || []);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(true);
+
+  useEffect(() => {
+    async function fetchDrivers() {
+      try {
+        const response = await fetch('/api/drivers');
+        const data = await response.json();
+        if (data.status === 'success') {
+          setDrivers(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch drivers:', error);
+      } finally {
+        setLoadingDrivers(false);
+      }
+    }
+    fetchDrivers();
+  }, []);
 
   const {
     register,
@@ -99,7 +125,15 @@ export function VisitorForm({ visitor, onSubmit, isLoading }: VisitorFormProps) 
           <Input label="Arrival Time *" type="time" error={errors.arrivalTime?.message} {...register('arrivalTime')} />
           <Input label="Airline *" placeholder="e.g., Delta, United" error={errors.airline?.message} {...register('airline')} />
           <Input label="Flight Number *" placeholder="e.g., DL123" error={errors.flightNumber?.message} {...register('flightNumber')} />
-          <Input label="Driver *" placeholder="Driver name" error={errors.driver?.message} {...register('driver')} className="sm:col-span-2" />
+          <Select
+            label="Driver *"
+            placeholder={loadingDrivers ? "Loading drivers..." : "Select a driver"}
+            options={drivers.map(d => ({ value: d.name, label: d.name }))}
+            error={errors.driver?.message}
+            disabled={loadingDrivers}
+            {...register('driver')}
+            className="sm:col-span-2"
+          />
         </div>
       </div>
 

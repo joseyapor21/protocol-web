@@ -10,8 +10,10 @@ import { Visitor, WeekGroup as WeekGroupType } from '@/types';
 import { groupVisitorsByWeek, getThisWeekVisitors, getTodayVisitors } from '@/lib/utils';
 import { Users, Calendar, CalendarCheck, Plus, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/auth-context';
 
 export default function DashboardPage() {
+  const { isAdmin } = useAuth();
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [weekGroups, setWeekGroups] = useState<WeekGroupType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,12 +102,14 @@ export default function DashboardPage() {
             <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Link href="/visitors/new">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Visitor
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/visitors/new">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Visitor
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -140,13 +144,17 @@ export default function DashboardPage() {
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
           <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No visitors found</h3>
-          <p className="text-gray-500 mb-4">Get started by adding your first visitor</p>
-          <Link href="/visitors/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Visitor
-            </Button>
-          </Link>
+          <p className="text-gray-500 mb-4">
+            {isAdmin ? 'Get started by adding your first visitor' : 'No visitors have been added yet'}
+          </p>
+          {isAdmin && (
+            <Link href="/visitors/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Visitor
+              </Button>
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

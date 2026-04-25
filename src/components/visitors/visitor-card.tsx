@@ -20,6 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/auth-context';
 
 interface VisitorCardProps {
   visitor: Visitor;
@@ -27,6 +28,7 @@ interface VisitorCardProps {
 }
 
 export function VisitorCard({ visitor, onDelete }: VisitorCardProps) {
+  const { isAdmin } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -239,11 +241,13 @@ ${visitor.notes ? `\nNotes: ${visitor.notes}` : ''}
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
-              <Link href={`/visitors/${visitor._id}/edit`}>
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4 mr-1" /> Edit
-                </Button>
-              </Link>
+              {isAdmin && (
+                <Link href={`/visitors/${visitor._id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-1" /> Edit
+                  </Button>
+                </Link>
+              )}
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-1" /> Share
               </Button>
@@ -257,9 +261,11 @@ ${visitor.notes ? `\nNotes: ${visitor.notes}` : ''}
                 {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
                 Copy
               </Button>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4 mr-1" /> Delete
-              </Button>
+              {isAdmin && (
+                <Button variant="destructive" size="sm" onClick={handleDelete}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Delete
+                </Button>
+              )}
             </div>
           </div>
         )}
